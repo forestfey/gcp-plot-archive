@@ -23,6 +23,15 @@ jobs:
         run: |
           git config user.name  "gcp-bot"
           git config user.email "bot@example.com"
+      
+          # Stage new PNG(s)
           git add plots/*.png
-          git commit -m "auto snapshot $(date -u)" || echo "Nothing to commit"
-          git push
+      
+          # Commit only when something changed
+          if git diff --cached --quiet; then
+            echo "Nothing new to commit."
+            exit 0
+          fi
+      
+          git commit -m "auto snapshot $(date -u)"
+          git push origin $(git rev-parse --abbrev-ref HEAD)
