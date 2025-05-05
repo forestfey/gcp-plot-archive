@@ -1,46 +1,48 @@
 name: GCP plot daily snapshot
+
 on:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 16 * * *'   # catches CEST
-    - cron: '0 17 * * *'   # catches CET
+  workflow_dispatch:            # manual “Run workflow” button
+  schedule:                     # automatic runs
+    - cron: '0 16 * * *'        # 18:00 local in CEST (UTC+2)
+    - cron: '0 17 * * *'        # 18:00 local in CET  (UTC+1)
 
 jobs:
   grab:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
-    - name: Skip if today’s file already exists
-      run: |
-        file="plots/gcp24h_$(date -u +%Y-%m-%d)_18-00.png"
-        if [ -f "$file" ]; then
-          echo "Snapshot already taken." && exit 0
-        fi
+      - name: Skip if today’s file already exists
+        run: |
+          file="plots/gcp24h_$(date -u +%Y-%m-%d)_18-00.png"
+          if [ -f "$file" ]; then
+            echo "Snapshot already taken." && exit 0
+          fi
 
-    - name: Screenshot 24‑hour graph (2‑nd canvas)
-      run: |
-        sudo apt-get update -y
-        sudo apt-get install -y nodejs npm
-        npm install -D playwright-chromium
-        npx playwright install chromium
+      - name: Screenshot 24‑hour graph (2‑nd canvas)
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y nodejs npm
+          npm install -D playwright-chromium
+          npx playwright install chromium
 
-        mkdir -p plots
-        file="plots/gcp24h_$(date -u +%Y-%m-%d)_18-00.png"
-        npx playwright screenshot \
-          https://www.global-mind.org/gcpdot/ \
-          "$file" \
-          --element='canvas:nth-of-type(2)'
+          mkdir -p plots
+          file="plots/gcp24h_$(date -u +%Y-%m-%d)_18-00.png"
+          npx playwright screenshot \
+            https://www.global-mind.org/gcpdot/ \
+            "$file" \
+            --element='canvas:nth-of-type(2)'
 
-    - name: Commit & push        # ← this block stays exactly as you already have it
-      run: |
-        git config user.name  "gcp-bot"
-        git config user.email "bot@example.com"
+      - name: Commit & push
+        run: |
+          git config user.name  "gcp-bot"
+          git config user.email "bot@example.com"
 
-        git add plots/*.png
-        if git diff --cached --quiet; then
-          echo "Nothing new to commit." && exit 0
-        fi
+          git add plots/*.png
+          if git diff --cached --quiet; then
+            echo "Nothing new to commit." && exit 0
+          fi
 
-        git commit -m "auto snapshot $(date -u)"
-        git push origin $(git rev-parse --abbrev-ref HEAD)
+          git commit -m "auto snapshot $(date -u)"
+          git push origin $(git rev-parse --abbrev-ref HEAD)
