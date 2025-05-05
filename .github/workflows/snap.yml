@@ -17,7 +17,8 @@ jobs:
           if [ -f "$file" ]; then
             echo "Snapshot already taken." && exit 0
           fi
-          curl -s -o "$file" https://global-mind.org/gcpdot/plot.png
+          mkdir -p "$(dirname "$file")"
+          curl -sS -o "$file" https://global-mind.org/gcpdot/plot.png
       - name: Commit & push
         run: |
           git config user.name  "gcp-bot"
