@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-          - name: Skip if today’s file already exists
+    - name: Skip if today’s file already exists
       run: |
         file="plots/gcp24h_$(date -u +%Y-%m-%d)_18-00.png"
         if [ -f "$file" ]; then
