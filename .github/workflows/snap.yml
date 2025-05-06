@@ -21,18 +21,28 @@ jobs:
           fi
 
       # Install Playwright once and capture the canvas
-      - name: Capture 24‑hour graph canvas
+      - name: Capture 24‑hour graph (2‑nd canvas)
+        env:
+          FILE: plots/gcp24h_$(date -u +%Y-%m-%d)_18-00.png
         run: |
           npm install -D playwright-chromium
           npx playwright install chromium
 
           mkdir -p plots
-          file="plots/gcp24h_$(date -u +%Y-%m-%d)_18-00.png"
-          # gcpchart.php contains ONE canvas (index 0)
-          npx playwright screenshot \
-            https://www.global-mind.org/gcpdot/gcpchart.php \
-            "$file" \
-            'canvas'
+
+          node - <<'NODE'
+          const { chromium } = require('playwright');
+          (async () => {
+            const file = process.env.FILE;
+            const browser = await chromium.launch();
+            const page = await browser.newPage({viewport:{width:550,height:240}});
+            await page.goto('https://www.global-mind.org/gcpdot/gcpchart.php', {waitUntil:'networkidle'});
+            await page.waitForTimeout(2000);               // give JS time to draw
+            const canvas = await page.$('canvas');
+            await canvas.screenshot({path: file});
+            await browser.close();
+          })();
+          NODE
 
       # Commit & push if a new PNG landed
       - name: Commit & push
