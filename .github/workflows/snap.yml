@@ -32,7 +32,7 @@ jobs:
           npx playwright screenshot \
             https://www.global-mind.org/gcpdot/gcpchart.php \
             "$file" \
-            --selector 'canvas'
+            'canvas'
 
       # Commit & push if a new PNG landed
       - name: Commit & push
