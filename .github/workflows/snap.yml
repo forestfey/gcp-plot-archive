@@ -9,41 +9,39 @@ on:
 jobs:
   grab:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
-      # ---------- skip if file already exists ----------
-      - name: Skip if today’s file already exists
+      # Skip if today’s file already exists
+      - name: Skip if file exists
         run: |
           file="plots/gcp24h_$(date -u +%Y-%m-%d)_18-00.png"
           if [ -f "$file" ]; then
             echo "Snapshot already taken." && exit 0
           fi
 
-      # ---------- headless screenshot of 2‑nd canvas ----------
-      - name: Capture 24‑hour graph (2‑nd canvas)
+      # Install Playwright once and capture the canvas
+      - name: Capture 24‑hour graph canvas
         run: |
           npm install -D playwright-chromium
           npx playwright install chromium
 
           mkdir -p plots
           file="plots/gcp24h_$(date -u +%Y-%m-%d)_18-00.png"
+          # gcpchart.php contains ONE canvas (index 0)
           npx playwright screenshot \
-            --selector 'canvas:nth-of-type(2)' \
-            https://www.global-mind.org/gcpdot/ \
-            "$file"
+            https://www.global-mind.org/gcpdot/gcpchart.php \
+            "$file" \
+            --selector 'canvas'
 
-      # ---------- commit & push ----------
+      # Commit & push if a new PNG landed
       - name: Commit & push
         run: |
           git config user.name  "gcp-bot"
           git config user.email "bot@example.com"
-
           git add plots/*.png
           if git diff --cached --quiet; then
             echo "Nothing new to commit." && exit 0
           fi
-
           git commit -m "auto snapshot $(date -u)"
           git push origin $(git rev-parse --abbrev-ref HEAD)
